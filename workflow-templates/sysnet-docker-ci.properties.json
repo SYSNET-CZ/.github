@@ -1,0 +1,8 @@
+{
+  "name": "Docker CI — Build & Push",
+  "description": "Docker build, push na Docker Hub (sysnetcz/) a volitelný smoke test. Self-hosted runner.",
+  "iconName": "package",
+  "categories": [
+    "deployment"
+  ]
+}

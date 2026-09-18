@@ -1,0 +1,8 @@
+{
+  "name": "Python CI — Lint, Typecheck & Tests",
+  "description": "Ruff lint, mypy typecheck a pytest testy. Volitelně MongoDB/PostgreSQL service. Self-hosted runner.",
+  "iconName": "code",
+  "categories": [
+    "testing"
+  ]
+}

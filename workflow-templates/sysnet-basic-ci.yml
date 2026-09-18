@@ -1,0 +1,25 @@
+name: CI
+
+on:
+  push:
+    branches: ["main", "master"]
+  pull_request:
+    branches: ["main", "master"]
+
+jobs:
+  build:
+    name: Build & Test
+    # Self-hosted runner (hermes-vm) — SYSNET-CZ infrastruktura
+    # Nespotřebovává GitHub Actions minuty
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Přidejte kroky dle potřeby projektu
+      - name: Build
+        run: echo "Doplňte build příkazy"
+
+      - name: Test
+        run: echo "Doplňte test příkazy"

@@ -1,0 +1,8 @@
+{
+  "name": "Basic CI",
+  "description": "Základní CI šablona pro SYSNET projekty. Self-hosted runner.",
+  "iconName": "gear",
+  "categories": [
+    "continuous-integration"
+  ]
+}
