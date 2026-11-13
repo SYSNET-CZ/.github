@@ -1,0 +1,97 @@
+name: Python CI (reusable)
+
+# Validace, lint, testy a build Python knihovny.
+# Volání: uses: SYSNET-CZ/.github/.github/workflows/python-ci.yml@v1
+
+on:
+  workflow_call:
+    inputs:
+      python-versions:
+        description: 'JSON pole verzí Pythonu pro testy'
+        type: string
+        default: '["3.11", "3.12", "3.13"]'
+      build-python-version:
+        description: 'Verze Pythonu pro lint a build'
+        type: string
+        default: '3.12'
+      runs-on:
+        description: 'Runner pro CI (výchozí self-hosted; publikace běží vždy na GitHub-hosted)'
+        type: string
+        default: 'self-hosted'
+      install-command:
+        description: 'Instalace projektu s dev závislostmi'
+        type: string
+        default: 'pip install -e ".[dev]"'
+      lint-command:
+        description: 'Lint (prázdné = přeskočit)'
+        type: string
+        default: 'ruff check .'
+      test-command:
+        description: 'Spuštění testů'
+        type: string
+        default: 'python -m pytest'
+
+permissions: {}
+
+jobs:
+  test:
+    name: Test (Python ${{ matrix.python-version }})
+    runs-on: ${{ inputs.runs-on }}
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ${{ fromJSON(inputs.python-versions) }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Create isolated virtualenv
+        # Nikdy neinstalovat do sdíleného toolcache self-hosted runneru.
+        run: |
+          python -m venv "$RUNNER_TEMP/venv"
+          echo "$RUNNER_TEMP/venv/bin" >> "$GITHUB_PATH"
+      - name: Install
+        env:
+          INSTALL_COMMAND: ${{ inputs.install-command }}
+        run: |
+          python -m pip install --upgrade pip
+          eval "$INSTALL_COMMAND"
+      - name: Lint
+        if: inputs.lint-command != '' && matrix.python-version == inputs.build-python-version
+        env:
+          LINT_COMMAND: ${{ inputs.lint-command }}
+        run: eval "$LINT_COMMAND"
+      - name: Test
+        env:
+          TEST_COMMAND: ${{ inputs.test-command }}
+        run: eval "$TEST_COMMAND"
+
+  build:
+    name: Build and check distribution
+    runs-on: ${{ inputs.runs-on }}
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: ${{ inputs.build-python-version }}
+      - name: Build and twine check
+        run: |
+          python -m venv "$RUNNER_TEMP/venv"
+          . "$RUNNER_TEMP/venv/bin/activate"
+          python -m pip install --upgrade pip build twine
+          python -m build --outdir dist
+          twine check --strict dist/*
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ci-dist
+          path: dist/
+          retention-days: 7

@@ -1,0 +1,51 @@
+name: Python GitHub Release (reusable)
+
+# Vytvoří (nebo aktualizuje) GitHub Release z CHANGELOG.md. Idempotentní.
+# Volání: uses: SYSNET-CZ/.github/.github/workflows/python-release.yml@v1
+
+on:
+  workflow_call:
+    inputs:
+      package-name:
+        type: string
+        required: true
+      changelog-file:
+        type: string
+        default: 'CHANGELOG.md'
+
+permissions: {}
+
+jobs:
+  release:
+    name: GitHub Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Create or update release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PACKAGE_NAME: ${{ inputs.package-name }}
+          CHANGELOG: ${{ inputs.changelog-file }}
+          TAG: ${{ github.ref_name }}
+          REPO: ${{ github.repository }}
+        run: |
+          version="${TAG#v}"
+          {
+            if [ -f "$CHANGELOG" ]; then
+              # sekce začínající nadpisem "## [X.Y.Z]" nebo "## X.Y.Z" až do dalšího "## "
+              awk -v v="$version" '
+                /^## / { if (found) exit; if (index($0, "[" v "]") || $2 == v) { found=1; next } }
+                found { print }' "$CHANGELOG"
+            fi
+            echo
+            echo "**PyPI:** https://pypi.org/project/$PACKAGE_NAME/$version/"
+          } > "$RUNNER_TEMP/notes.md"
+          if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
+            gh release edit "$TAG" --repo "$REPO" --title "$PACKAGE_NAME $version" --notes-file "$RUNNER_TEMP/notes.md"
+          else
+            gh release create "$TAG" --repo "$REPO" --verify-tag --title "$PACKAGE_NAME $version" --notes-file "$RUNNER_TEMP/notes.md"
+          fi
