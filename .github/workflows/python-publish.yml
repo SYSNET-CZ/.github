@@ -48,6 +48,7 @@ jobs:
       version: ${{ steps.dist.outputs.version }}
     steps:
       - name: Require release tag vX.Y.Z
+        if: ${{ !contains(inputs.repository-url, 'test.pypi.org') }}
         env:
           REF_TYPE: ${{ github.ref_type }}
           TAG: ${{ github.ref_name }}
@@ -61,6 +62,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - name: Require tagged commit on main branch
+        if: ${{ !contains(inputs.repository-url, 'test.pypi.org') }}
         env:
           MAIN_BRANCH: ${{ inputs.main-branch }}
         run: |
@@ -82,6 +84,8 @@ jobs:
         env:
           PACKAGE_NAME: ${{ inputs.package-name }}
           TAG: ${{ github.ref_name }}
+          # TestPyPI: žádný tag, ale verze MUSÍ být dev release (X.Y.Z.devN), aby nešlo vydat produkční verzi
+          TEST_MODE: ${{ contains(inputs.repository-url, 'test.pypi.org') }}
         run: |
           python - <<'PY'
           import glob, os, sys, tarfile, zipfile
@@ -90,7 +94,9 @@ jobs:
           from packaging.version import Version
 
           expected_name = canonicalize_name(os.environ["PACKAGE_NAME"])
-          expected_version = Version(os.environ["TAG"].removeprefix("v"))
+          test_mode = os.environ.get("TEST_MODE") == "true"
+          expected_version = None if test_mode else Version(os.environ["TAG"].removeprefix("v"))
+          seen_versions = set()
           errors = []
           wheels = glob.glob("dist/*.whl")
           sdists = glob.glob("dist/*.tar.gz")
@@ -107,8 +113,17 @@ jobs:
                       meta = Parser().parsestr(t.extractfile(member).read().decode())
               if canonicalize_name(meta["Name"]) != expected_name:
                   errors.append(f"{path}: název {meta['Name']} != {expected_name}")
-              if Version(meta["Version"]) != expected_version:
+              version = Version(meta["Version"])
+              seen_versions.add(version)
+              if test_mode:
+                  if not version.is_devrelease:
+                      errors.append(f"{path}: TestPyPI přijímá jen dev verze (X.Y.Z.devN), nalezeno {version}")
+              elif version != expected_version:
                   errors.append(f"{path}: verze {meta['Version']} != tag {os.environ['TAG']}")
+          if test_mode and len(seen_versions) == 1:
+              expected_version = next(iter(seen_versions))
+          elif test_mode:
+              errors.append(f"nesourodé verze v archivech: {sorted(map(str, seen_versions))}")
           if errors:
               for e in errors:
                   print(f"::error::{e}")

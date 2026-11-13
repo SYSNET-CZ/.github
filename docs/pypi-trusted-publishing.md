@@ -43,3 +43,13 @@ při publikaci. Pro privátní repozitáře se attestations nevytvářejí (`att
 - PyPI: role *Owner* jen pro nezbytné osoby, ostatní *Maintainer*; vyžadujte 2FA.
 - Po zprovoznění Trusted Publishingu smazat secret `PYPI_API_TOKEN` (repo i org) a token na PyPI zneplatnit.
 - Odchod člena týmu: odebrat z PyPI projektů a z GitHub týmů s právem push na tagy.
+
+## TestPyPI (od `v1.1.0`)
+
+`python-publish.yml` s `repository-url: https://test.pypi.org/legacy/` běží v testovacím režimu: nevyžaduje tag ani
+větev `main`, ale **přijme jen dev verze** (`X.Y.Z.devN`), takže produkční číslo verze nelze touto cestou spálit.
+Doporučené spouštění: `workflow_dispatch` ve vlastním `publish-test.yml` s environmentem `testpypi`.
+
+## Verze reusable workflows
+
+Odkazujte přesným tagem (`@v1.1.0`); existující tagy se nepřepisují, ani pohyblivý `v1` (zůstává na `v1.0.0`).
