@@ -1,9 +1,10 @@
-name: Python publish to PyPI (reusable)
+name: Python verify and build for PyPI (reusable)
 
-# Bezpečná publikace přes PyPI Trusted Publishing (OIDC), bez API tokenů.
-# Volající workflow MUSÍ mít soubor .github/workflows/publish.yml - PyPI Trusted Publisher
-# se registruje na název volajícího workflow, ne tohoto.
-# Volání: uses: SYSNET-CZ/.github/.github/workflows/python-publish.yml@v1
+# Ověření release tagu/verze a build distribuce pro publikaci na PyPI. Samotný upload NEDĚLÁ:
+# PyPI oficiálně nepodporuje reusable workflow jako Trusted Publisher, proto upload
+# (pypa/gh-action-pypi-publish s id-token: write) patří přímo do volajícího publish.yml,
+# který si artefakt "python-dist" stáhne. Viz docs/pypi-trusted-publishing.md.
+# Volání: uses: SYSNET-CZ/.github/.github/workflows/python-build.yml@v1.2.0
 
 on:
   workflow_call:
@@ -15,10 +16,6 @@ on:
       python-version:
         type: string
         default: '3.12'
-      environment:
-        description: 'GitHub environment publikačního jobu'
-        type: string
-        default: 'pypi'
       repository-url:
         description: 'Prázdné = produkční PyPI; https://test.pypi.org/legacy/ = TestPyPI'
         type: string
@@ -27,10 +24,6 @@ on:
         description: 'Větev, ze které smí release tag pocházet'
         type: string
         default: 'main'
-      dry-run:
-        description: 'Pouze ověření a build, bez publikace'
-        type: boolean
-        default: false
     outputs:
       version:
         description: 'Publikovaná verze'
@@ -153,25 +146,3 @@ jobs:
           path: dist/
           if-no-files-found: error
           retention-days: 7
-
-  publish:
-    name: Publish to PyPI
-    needs: verify
-    if: ${{ !inputs.dry-run }}
-    runs-on: ubuntu-latest
-    environment:
-      name: ${{ inputs.environment }}
-      url: ${{ inputs.repository-url == '' && format('https://pypi.org/project/{0}/{1}/', inputs.package-name, needs.verify.outputs.version) || '' }}
-    permissions:
-      contents: read
-      id-token: write   # OIDC pro Trusted Publishing
-    steps:
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          name: python-dist
-          path: dist/
-      - uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
-        with:
-          repository-url: ${{ inputs.repository-url }}
-          packages-dir: dist/
-          attestations: false   # pro privátní repozitáře nejsou podporovány

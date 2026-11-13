@@ -56,12 +56,14 @@ jobs:
   ci:
     permissions:
       contents: read
-    uses: SYSNET-CZ/.github/.github/workflows/python-ci.yml@v1.1.0
+    uses: SYSNET-CZ/.github/.github/workflows/python-ci.yml@v1.2.0
     with:
       python-versions: '["3.11", "3.12", "3.13"]'
 ```
 
-`.github/workflows/publish.yml` - **název souboru musí být přesně `publish.yml`**, na něj se registruje Trusted Publisher:
+`.github/workflows/publish.yml` - **název souboru musí být přesně `publish.yml`**, na něj se registruje Trusted Publisher.
+Upload na PyPI musí být přímo v něm (PyPI oficiálně nepodporuje reusable workflow jako publishera, ověřeno
+`invalid-publisher` při pokusu o upload z reusable workflow); ověření a build je centrální:
 
 ```yaml
 name: Publish
@@ -73,23 +75,38 @@ concurrency:
   group: publish-${{ github.ref }}
   cancel-in-progress: false
 jobs:
+  build:
+    permissions:
+      contents: read
+    uses: SYSNET-CZ/.github/.github/workflows/python-build.yml@v1.2.0
+    with:
+      package-name: sysnet-priklad
   publish:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: pypi
     permissions:
       contents: read
       id-token: write
-    uses: SYSNET-CZ/.github/.github/workflows/python-publish.yml@v1.1.0
-    with:
-      package-name: sysnet-priklad
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: python-dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
+        with:
+          packages-dir: dist/
+          attestations: false
   release:
     needs: publish
     permissions:
       contents: write
-    uses: SYSNET-CZ/.github/.github/workflows/python-release.yml@v1.1.0
+    uses: SYSNET-CZ/.github/.github/workflows/python-release.yml@v1.2.0
     with:
       package-name: sysnet-priklad
 ```
 
-Volejte vždy přes přesný verzovaný tag (`@v1.1.0`), nikdy `@main`. Tagy se nepřepisují, každá změna reusable workflow je nový tag `v1.x.y`.
+Volejte vždy přes přesný verzovaný tag (`@v1.2.0`), nikdy `@main`. Tagy se nepřepisují, každá změna reusable workflow je nový tag `v1.x.y`.
 
 ## 4. Runnery
 

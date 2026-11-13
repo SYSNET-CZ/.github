@@ -15,7 +15,7 @@ Existující projekt: PyPI -> projekt -> **Manage** -> **Publishing** -> *Add a 
 | PyPI project name | např. `sysnet-pyutils` |
 | Owner | `SYSNET-CZ` |
 | Repository name | např. `pyutils` |
-| Workflow name | `publish.yml` (**název volajícího workflow**, ne `python-publish.yml`) |
+| Workflow name | `publish.yml` (**volající workflow s krokem uploadu**) |
 | Environment name | `pypi` |
 
 Nový projekt: stejná tabulka v **Your account -> Publishing** jako *Pending Publisher*; projekt vznikne prvním
@@ -44,12 +44,19 @@ při publikaci. Pro privátní repozitáře se attestations nevytvářejí (`att
 - Po zprovoznění Trusted Publishingu smazat secret `PYPI_API_TOKEN` (repo i org) a token na PyPI zneplatnit.
 - Odchod člena týmu: odebrat z PyPI projektů a z GitHub týmů s právem push na tagy.
 
-## TestPyPI (od `v1.1.0`)
+## Upload musí být ve volajícím workflow
 
-`python-publish.yml` s `repository-url: https://test.pypi.org/legacy/` běží v testovacím režimu: nevyžaduje tag ani
+Pokus o upload z reusable workflow (`v1.1.0`) selhal na `invalid-publisher`, ačkoli publisher odpovídal volajícímu
+workflow. PyPI reusable workflow jako publishera oficiálně nepodporuje (warehouse#11096). Proto `python-build.yml`
+(od `v1.2.0`) jen ověřuje a sestavuje a krok `pypa/gh-action-pypi-publish` je přímo v `publish.yml` knihovny.
+Ověřeno úspěšným uploadem dev verze na TestPyPI.
+
+## TestPyPI
+
+`python-build.yml` s `repository-url: https://test.pypi.org/legacy/` běží v testovacím režimu: nevyžaduje tag ani
 větev `main`, ale **přijme jen dev verze** (`X.Y.Z.devN`), takže produkční číslo verze nelze touto cestou spálit.
 Doporučené spouštění: `workflow_dispatch` ve vlastním `publish-test.yml` s environmentem `testpypi`.
 
 ## Verze reusable workflows
 
-Odkazujte přesným tagem (`@v1.1.0`); existující tagy se nepřepisují, ani pohyblivý `v1` (zůstává na `v1.0.0`).
+Odkazujte přesným tagem (`@v1.2.0`); existující tagy se nepřepisují, ani pohyblivý `v1` (zůstává na `v1.0.0`); `v1.0.0` a `v1.1.0` obsahují nepoužitelný `python-publish.yml`.
