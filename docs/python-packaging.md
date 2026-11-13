@@ -56,7 +56,7 @@ jobs:
   ci:
     permissions:
       contents: read
-    uses: SYSNET-CZ/.github/.github/workflows/python-ci.yml@v1
+    uses: SYSNET-CZ/.github/.github/workflows/python-ci.yml@v1.1.0
     with:
       python-versions: '["3.11", "3.12", "3.13"]'
 ```
@@ -77,19 +77,19 @@ jobs:
     permissions:
       contents: read
       id-token: write
-    uses: SYSNET-CZ/.github/.github/workflows/python-publish.yml@v1
+    uses: SYSNET-CZ/.github/.github/workflows/python-publish.yml@v1.1.0
     with:
       package-name: sysnet-priklad
   release:
     needs: publish
     permissions:
       contents: write
-    uses: SYSNET-CZ/.github/.github/workflows/python-release.yml@v1
+    uses: SYSNET-CZ/.github/.github/workflows/python-release.yml@v1.1.0
     with:
       package-name: sysnet-priklad
 ```
 
-Volejte vždy přes stabilní tag `@v1`, nikdy `@main`. Reusable workflow se vydává tagem `v1.x.y` a pohyblivým tagem `v1`.
+Volejte vždy přes přesný verzovaný tag (`@v1.1.0`), nikdy `@main`. Tagy se nepřepisují, každá změna reusable workflow je nový tag `v1.x.y`.
 
 ## 4. Runnery
 
