@@ -25,9 +25,9 @@ Všechny šablony jsou přednastaveny na **self-hosted runner** (`hermes-vm`).
 | Workflow | Účel |
 |---|---|
 | `python-ci.yml` | lint, testy v matici verzí, build a `twine check` |
-| `python-publish.yml` | ověření tagu/verze, publikace na PyPI přes OIDC (Trusted Publishing) |
+| `python-build.yml` | ověření tagu/verze/názvu, build a `twine check`; upload dělá volající workflow (OIDC) |
 | `python-release.yml` | GitHub Release z `CHANGELOG.md` |
 
-Volat přes přesný tag (`@v1.1.0`). Dokumentace: [`docs/python-packaging.md`](docs/python-packaging.md),
+Volat přes přesný tag (`@v1.2.0`). Dokumentace: [`docs/python-packaging.md`](docs/python-packaging.md),
 [`docs/python-release-process.md`](docs/python-release-process.md),
 [`docs/pypi-trusted-publishing.md`](docs/pypi-trusted-publishing.md).

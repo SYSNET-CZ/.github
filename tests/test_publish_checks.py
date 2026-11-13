@@ -1,4 +1,4 @@
-"""Tests of the version/name verification embedded in python-publish.yml.
+"""Tests of the version/name verification embedded in python-build.yml.
 
 Extracts the inline Python of the "Verify distribution" step, builds a tiny fixture
 package and runs the step with valid and invalid tags/names.
@@ -13,7 +13,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-WORKFLOW = Path(__file__).parent.parent / ".github/workflows/python-publish.yml"
+WORKFLOW = Path(__file__).parent.parent / ".github/workflows/python-build.yml"
 
 
 def _step_script() -> str:
