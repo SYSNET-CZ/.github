@@ -59,7 +59,12 @@ jobs:
         env:
           MAIN_BRANCH: ${{ inputs.main-branch }}
         run: |
-          git fetch --no-tags origin "$MAIN_BRANCH"
+          # fetch-depth: 0 v checkoutu už stáhl všechny větve; další fetch by u privátních repo
+          # selhal (persist-credentials: false), proto se zde nic nestahuje.
+          if ! git rev-parse --verify --quiet "refs/remotes/origin/$MAIN_BRANCH" >/dev/null; then
+            echo "::error::Větev $MAIN_BRANCH nebyla v checkoutu nalezena"
+            exit 1
+          fi
           if ! git merge-base --is-ancestor "$GITHUB_SHA" "origin/$MAIN_BRANCH"; then
             echo "::error::Tagovaný commit není na větvi $MAIN_BRANCH"
             exit 1
